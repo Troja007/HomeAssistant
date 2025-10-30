@@ -13,18 +13,20 @@ blueprint:
       name: Bewegungsmelder 1 (Pflicht)
       description: Sensor, der bei Bewegung auf "on" geht (binary_sensor, occupancy, motion, presence, ...).
       selector:
-        entity: {}
+        entity:
+          domain: binary_sensor
     motion_sensor_2:
       name: Bewegungsmelder 2 (optional)
       default: ""
       selector:
-        entity: {}
+        entity:
+          domain: binary_sensor
     motion_sensor_3:
       name: Bewegungsmelder 3 (optional)
       default: ""
       selector:
-        entity: {}
-
+        entity:
+          domain: binary_sensor
     motion_duration:
       name: Mindest-Bewegungsdauer (Sekunden)
       default: 1
