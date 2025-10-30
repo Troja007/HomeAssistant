@@ -15,6 +15,7 @@ blueprint:
       selector:
         entity:
           domain: binary_sensor
+            type: occupied
     motion_sensor_2:
       name: Bewegungsmelder 2 (optional)
       default: ""
