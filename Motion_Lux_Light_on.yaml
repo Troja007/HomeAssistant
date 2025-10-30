@@ -44,8 +44,8 @@ blueprint:
       default: ""
       selector:
         entity:
-        domain: sensor
-        device_class: illuminance
+          domain: sensor
+          device_class: illuminance
     lux_threshold_1:
       name: Schwellwert Sensor 1 (Lux)
       default: 2
@@ -59,7 +59,9 @@ blueprint:
       name: Helligkeitssensor 2 (optional)
       default: ""
       selector:
-        entity: {}
+        entity:
+          domain: sensor
+          device_class: illuminance
     lux_threshold_2:
       name: Schwellwert Sensor 2 (Lux)
       default: 10
