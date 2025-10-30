@@ -1,12 +1,12 @@
 blueprint:
-  name: Licht bei Bewegung und Dunkelheit (mehrere Motion, 1–2 Lux)
+  name: Licht bei Bewegung und (optional) Dunkelheit
   description: >
-    Schaltet ein Licht ein, wenn mindestens EIN Bewegungsmelder auslöst
-    UND die Helligkeit unter den definierten Schwellwerten liegt.
-    - 1 Bewegungsmelder ist Pflicht
-    - bis zu 4 weitere Bewegungsmelder optional
-    - 1 Lux-Sensor Pflicht
-    - 2. Lux-Sensor optional
+    Schaltet ein Licht ein, wenn mindestens ein Bewegungsmelder auslöst.
+    Bis zu 2 zusätzliche Bewegungsmelder können optional angegeben werden.
+    Bis zu 2 Helligkeitssensoren können optional angegeben werden.
+    - Wenn kein Helligkeitssensor angegeben ist → es wird immer eingeschaltet.
+    - Wenn 1 Helligkeitssensor angegeben ist → er muss unter dem Schwellwert liegen.
+    - Wenn 2 Helligkeitssensoren angegeben sind → beide müssen unter ihrem Schwellwert liegen.
   domain: automation
   input:
     motion_sensor_1:
@@ -15,6 +15,7 @@ blueprint:
         entity:
           domain: binary_sensor
           device_class: motion
+
     motion_sensor_2:
       name: Bewegungsmelder 2 (optional)
       default: ""
@@ -22,22 +23,9 @@ blueprint:
         entity:
           domain: binary_sensor
           device_class: motion
+
     motion_sensor_3:
       name: Bewegungsmelder 3 (optional)
-      default: ""
-      selector:
-        entity:
-          domain: binary_sensor
-          device_class: motion
-    motion_sensor_4:
-      name: Bewegungsmelder 4 (optional)
-      default: ""
-      selector:
-        entity:
-          domain: binary_sensor
-          device_class: motion
-    motion_sensor_5:
-      name: Bewegungsmelder 5 (optional)
       default: ""
       selector:
         entity:
@@ -46,7 +34,6 @@ blueprint:
 
     motion_duration:
       name: Mindest-Bewegungsdauer (Sekunden)
-      description: Wie lange muss der Bewegungsmelder AN sein, bevor geschaltet wird?
       default: 1
       selector:
         number:
@@ -54,22 +41,15 @@ blueprint:
           max: 120
           mode: slider
 
-    light_target:
-      name: Licht / Schalter
-      selector:
-        target:
-          entity:
-            domain:
-              - light
-              - switch
-
     lux_sensor_1:
-      name: Helligkeitssensor 1 (Pflicht)
+      name: Helligkeitssensor 1 (optional)
+      default: ""
       selector:
         entity:
           domain: sensor
     lux_threshold_1:
       name: Schwellwert Sensor 1 (Lux)
+      description: Wird nur verwendet, wenn Helligkeitssensor 1 gesetzt ist.
       default: 2
       selector:
         number:
@@ -84,7 +64,8 @@ blueprint:
         entity:
           domain: sensor
     lux_threshold_2:
-      name: Schwellwert Sensor 2 (Lux, optional)
+      name: Schwellwert Sensor 2 (Lux)
+      description: Wird nur verwendet, wenn Helligkeitssensor 2 gesetzt ist.
       default: 10
       selector:
         number:
@@ -92,14 +73,22 @@ blueprint:
           max: 2000
           mode: box
 
+    light_target:
+      name: Licht / Schalter
+      description: Das Gerät, das eingeschaltet werden soll.
+      selector:
+        target:
+          entity:
+            domain:
+              - light
+              - switch
+
 mode: single
 
 variables:
   motion_sensor_1: !input motion_sensor_1
   motion_sensor_2: !input motion_sensor_2
   motion_sensor_3: !input motion_sensor_3
-  motion_sensor_4: !input motion_sensor_4
-  motion_sensor_5: !input motion_sensor_5
   lux_sensor_1: !input lux_sensor_1
   lux_sensor_2: !input lux_sensor_2
   lux_threshold_1: !input lux_threshold_1
@@ -113,7 +102,7 @@ trigger:
     for:
       seconds: !input motion_duration
 
-  # Optionale Bewegungsmelder – werden nur wirksam, wenn gesetzt
+  # Optionale Bewegungsmelder – nur wenn gesetzt
   - platform: state
     entity_id: !input motion_sensor_2
     to: "on"
@@ -126,34 +115,26 @@ trigger:
     for:
       seconds: !input motion_duration
     enabled: "{{ motion_sensor_3 != '' }}"
-  - platform: state
-    entity_id: !input motion_sensor_4
-    to: "on"
-    for:
-      seconds: !input motion_duration
-    enabled: "{{ motion_sensor_4 != '' }}"
-  - platform: state
-    entity_id: !input motion_sensor_5
-    to: "on"
-    for:
-      seconds: !input motion_duration
-    enabled: "{{ motion_sensor_5 != '' }}"
 
 condition:
-  # 1) Helligkeitssensor 1 MUSS unter Schwellwert sein
+  # Helligkeit prüfen
+  # Fall 1: kein Sensor gesetzt → true
+  # Fall 2: 1 Sensor gesetzt → muss < Schwelle sein
+  # Fall 3: 2 Sensoren gesetzt → beide müssen < Schwelle sein
   - condition: template
     value_template: >
-      {{ states(lux_sensor_1) | float(999) < (lux_threshold_1 | float(999)) }}
-
-  # 2) Helligkeitssensor 2 ist OPTIONAL:
-  #    - wenn keiner gesetzt ist → Bedingung gilt als erfüllt
-  #    - wenn einer gesetzt ist → muss unter seinem Schwellwert sein
-  - condition: template
-    value_template: >
-      {% if lux_sensor_2 == '' %}
+      {% set s1 = lux_sensor_1 %}
+      {% set s2 = lux_sensor_2 %}
+      {% set v1 = states(s1)|float(999) %}
+      {% set v2 = states(s2)|float(999) %}
+      {% if s1 == '' and s2 == '' %}
         true
+      {% elif s1 != '' and s2 == '' %}
+        {{ v1 < (lux_threshold_1 | float(999)) }}
+      {% elif s1 == '' and s2 != '' %}
+        {{ v2 < (lux_threshold_2 | float(999)) }}
       {% else %}
-        {{ states(lux_sensor_2) | float(999) < (lux_threshold_2 | float(999)) }}
+        {{ v1 < (lux_threshold_1 | float(999)) and v2 < (lux_threshold_2 | float(999)) }}
       {% endif %}
 
 action:
