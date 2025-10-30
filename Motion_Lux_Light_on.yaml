@@ -1,29 +1,29 @@
 blueprint:
-  name: Licht bei Bewegung und (optional) Dunkelheit
+  name: Licht bei Bewegung und (optional) Dunkelheit – kompatibel
   description: >
-    Schaltet ein Licht ein, wenn mindestens ein Bewegungsmelder / Occupancy-Sensor auslöst.
-    Bis zu 2 zusätzliche Bewegungs-/Belegungssensoren optional.
+    Schaltet ein Licht ein, wenn mindestens ein Sensor "an" meldet.
+    Bis zu 2 zusätzliche Bewegungssensoren optional.
     Bis zu 2 Helligkeitssensoren optional.
+    Eingaben sind extra offen gehalten, damit auch Matter / Eve / Thread
+    Entities ausgewählt werden können, die nicht als klassischer binary_sensor
+    kommen.
   domain: automation
   input:
     motion_sensor_1:
       name: Bewegungsmelder 1 (Pflicht)
+      description: Sensor, der bei Bewegung auf "on" geht (binary_sensor, occupancy, motion, presence, ...).
       selector:
-        entity:
-          domain: binary_sensor
-          # keine device_class → zeigt alle binary_sensor an
+        entity: {}
     motion_sensor_2:
       name: Bewegungsmelder 2 (optional)
       default: ""
       selector:
-        entity:
-          domain: binary_sensor
+        entity: {}
     motion_sensor_3:
       name: Bewegungsmelder 3 (optional)
       default: ""
       selector:
-        entity:
-          domain: binary_sensor
+        entity: {}
 
     motion_duration:
       name: Mindest-Bewegungsdauer (Sekunden)
@@ -38,8 +38,7 @@ blueprint:
       name: Helligkeitssensor 1 (optional)
       default: ""
       selector:
-        entity:
-          domain: sensor
+        entity: {}
     lux_threshold_1:
       name: Schwellwert Sensor 1 (Lux)
       default: 2
@@ -53,8 +52,7 @@ blueprint:
       name: Helligkeitssensor 2 (optional)
       default: ""
       selector:
-        entity:
-          domain: sensor
+        entity: {}
     lux_threshold_2:
       name: Schwellwert Sensor 2 (Lux)
       default: 10
@@ -66,7 +64,7 @@ blueprint:
 
     light_target:
       name: Licht / Schalter
-      description: Das Gerät, das eingeschaltet werden soll.
+      description: Gerät, das eingeschaltet werden soll
       selector:
         target:
           entity:
@@ -86,12 +84,14 @@ variables:
   lux_threshold_2: !input lux_threshold_2
 
 trigger:
+  # Pflicht-Sensor
   - platform: state
     entity_id: !input motion_sensor_1
     to: "on"
     for:
       seconds: !input motion_duration
 
+  # optional 2
   - platform: state
     entity_id: !input motion_sensor_2
     to: "on"
@@ -99,6 +99,7 @@ trigger:
       seconds: !input motion_duration
     enabled: "{{ motion_sensor_2 != '' }}"
 
+  # optional 3
   - platform: state
     entity_id: !input motion_sensor_3
     to: "on"
@@ -107,20 +108,26 @@ trigger:
     enabled: "{{ motion_sensor_3 != '' }}"
 
 condition:
+  # Helligkeit-Logik:
+  # - kein Sensor gesetzt -> true
+  # - 1 Sensor gesetzt -> muss < Schwelle
+  # - 2 Sensoren gesetzt -> beide < Schwelle
   - condition: template
     value_template: >
       {% set s1 = lux_sensor_1 %}
       {% set s2 = lux_sensor_2 %}
-      {% set v1 = states(s1)|float(999) %}
-      {% set v2 = states(s2)|float(999) %}
       {% if s1 == '' and s2 == '' %}
         true
-      {% elif s1 != '' and s2 == '' %}
-        {{ v1 < (lux_threshold_1 | float(999)) }}
-      {% elif s1 == '' and s2 != '' %}
-        {{ v2 < (lux_threshold_2 | float(999)) }}
       {% else %}
-        {{ v1 < (lux_threshold_1 | float(999)) and v2 < (lux_threshold_2 | float(999)) }}
+        {% set v1 = states(s1)|float(999) %}
+        {% set v2 = states(s2)|float(999) %}
+        {% if s1 != '' and s2 == '' %}
+          {{ v1 < (lux_threshold_1 | float(999)) }}
+        {% elif s1 == '' and s2 != '' %}
+          {{ v2 < (lux_threshold_2 | float(999)) }}
+        {% else %}
+          {{ v1 < (lux_threshold_1 | float(999)) and v2 < (lux_threshold_2 | float(999)) }}
+        {% endif %}
       {% endif %}
 
 action:
