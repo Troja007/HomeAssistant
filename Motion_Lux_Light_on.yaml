@@ -3,7 +3,6 @@ blueprint:
   description: >
     Schaltet ein Licht ein, wenn ein Bewegungsmelder auslöst
     und beide Helligkeitssensoren unter den definierten Schwellen liegen.
-    Basierend auf deiner funktionierenden Automation.
   domain: automation
   input:
     motion_sensor:
