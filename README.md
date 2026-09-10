@@ -41,3 +41,9 @@ Core functions such as lighting, heating and shading must remain operational eve
 - Matter / Thread / Zigbee interoperability tests
 
 This repository represents the **consolidated project state**, not a raw chat history. Exploratory discussions are reduced to decisions, findings, constraints and open questions that are useful for future implementation work and Codex-based development.
+
+## Documentation maintenance
+
+Read PROJECT.md, ARCHITECTURE.md, OPEN_TOPICS.md and the relevant subproject README before changing the design. Distinguish requirements and preferred designs from researched options, measured results and unresolved decisions. Earlier suggestions must not become confirmed decisions without supporting evidence.
+
+This repository holds the current project baseline. LLM-Wiki holds source-backed background and reusable findings; cross-reference the project baseline instead of copying it in full. Add wiki content only after comparison shows a meaningful new finding or correction.
