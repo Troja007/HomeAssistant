@@ -1,5 +1,11 @@
 # Roborock Garage
 
+## Status and evidence
+
+Consolidated on 2026-09-10 from the project discussion “HA: Staubsauger Garage” and the repository baseline of 2026-09-06.
+
+This is a design and evaluation baseline. The reviewed material contains no completed garage prototype, measured travel times, selected bill of materials or acceptance-test results. Integration options below were discussed or researched; they are not verified implementations in this installation.
+
 ## Goal
 
 Integrate a Roborock robot vacuum with fresh-water connection into a kitchen cabinet. The robot and docking station remain accessible by opening the normal kitchen cabinet front.
@@ -58,11 +64,19 @@ Preferred simplicity:
 - Home Assistant can use known travel time plus a safety margin before starting the Roborock program
 - optional external open/closed contacts can later be added for plausibility checking, but are not currently mandatory
 
+### Timing and state interpretation
+
+Without external feedback, open/closed are assumed states derived from commands and elapsed time. A travel-time delay cannot confirm that the panel actually opened if it binds or the drive fails. This distinction is also documented for [ESPHome time-based covers](https://esphome.io/components/cover/time_based/) (reviewed 2026-09-10).
+
+The selected actuator's internal end switches are intended to stop travel; whether they expose a separate status signal depends on the model. The choice of external confirmation remains open. No continuous position measurement is required by the current brief.
+
+Local UP/DOWN operation should remain usable without Home Assistant. Local travel timeout, direction handling and behaviour after power loss still need to be defined and tested with the selected controller.
+
 ## Home Assistant integration options evaluated
 
 ### ESP32 / ESPHome
 
-A proven DIY approach found in multiple Home Assistant projects:
+A DIY approach discussed using reports of other Home Assistant projects; those reports are not acceptance evidence for this garage:
 
 - ESP32
 - ESPHome
@@ -108,3 +122,9 @@ German / EU suppliers and Amazon-sourced generic actuators may be used for proto
 The project currently favors a **simple fixed-stroke linear actuator with integrated end switches** over more complex belt, encoder, Hall-sensor or potentiometer solutions.
 
 The exact actuator, guide mechanism and relay/motor-controller combination are still open and must be selected after final cabinet/front dimensions and weight are known.
+
+## Next implementation step
+
+Measure the cabinet/front geometry and moving mass first, then select the actuator, guides, power supply and controller as a compatible combination. Keep the unresolved component and sensor decisions in [OPEN_TOPICS.md](../../OPEN_TOPICS.md#roborock-garage).
+
+Before marking the concept validated, record observed travel times under load, repeatable movement without binding, both end stops, local button operation without Home Assistant, and restart/timeout behaviour. Define and test the robot start/return sequence and the handling of an obstructed opening before unattended operation. These are pending checks, not completed results.
